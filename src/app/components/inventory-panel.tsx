@@ -25,9 +25,17 @@ export default function InventoryPanel() {
 
   const [isClearing, setIsClearing] = useState(false);
   const [clearMessage, setClearMessage] = useState("");
+  const [removingIds, setRemovingIds] = useState<Set<string>>(new Set());
 
   const foodItems = data?.foodItems ?? [];
-  const displayItems = useMemo(() => groupDisplayItems(foodItems), [foodItems]);
+  const visibleItems = useMemo(
+    () => foodItems.filter((item) => item.consumedAt == null),
+    [foodItems]
+  );
+  const displayItems = useMemo(
+    () => groupDisplayItems(visibleItems),
+    [visibleItems]
+  );
   const grouped = useMemo(() => {
     const groups: Record<string, typeof displayItems> = {
       expired: [],
@@ -40,6 +48,35 @@ export default function InventoryPanel() {
     });
     return groups;
   }, [displayItems]);
+
+  const handleConsume = (itemId: string, itemIds: string[]) => {
+    if (removingIds.has(itemId)) return;
+    setRemovingIds((prev) => {
+      const next = new Set(prev);
+      next.add(itemId);
+      return next;
+    });
+    const consumedAt = Date.now();
+    window.setTimeout(() => {
+      void (async () => {
+        try {
+          const txs = itemIds.map((id) =>
+            db.tx.foodItems[id].update({ consumedAt })
+          );
+          await db.transact(txs);
+        } catch (err) {
+          setRemovingIds((prev) => {
+            const next = new Set(prev);
+            next.delete(itemId);
+            return next;
+          });
+          window.alert(
+            err instanceof Error ? err.message : "标记失败，请稍后重试。"
+          );
+        }
+      })();
+    }, 200);
+  };
 
   const handleClearInventory = async () => {
     if (!foodItems.length) {
@@ -105,8 +142,21 @@ export default function InventoryPanel() {
                 {grouped[status].map((item) => (
                   <div
                     key={item.id}
-                    className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4"
+                    className={`relative rounded-2xl border border-slate-800 bg-slate-950/60 p-4 transition-all duration-200 ease-out ${
+                      removingIds.has(item.id)
+                        ? "scale-95 opacity-0 pointer-events-none"
+                        : "scale-100 opacity-100"
+                    }`}
                   >
+                    <button
+                      type="button"
+                      className="absolute right-3 top-3 rounded-full border border-slate-700 px-2 py-0.5 text-xs text-slate-300 transition hover:border-rose-400/60 hover:text-rose-200 disabled:opacity-50"
+                      aria-label="设为已食用并移除"
+                      onClick={() => handleConsume(item.id, item.itemIds)}
+                      disabled={removingIds.has(item.id)}
+                    >
+                      ×
+                    </button>
                     <div className="flex items-center justify-between">
                       <h3 className="font-semibold">{item.name}</h3>
                       <span className="text-xs text-slate-400">
@@ -119,6 +169,15 @@ export default function InventoryPanel() {
                     <div className="mt-1 text-xs text-slate-500">
                       置信度：{Math.round(item.confidence * 100)}%
                     </div>
+                    <label className="mt-3 flex items-center gap-2 text-xs text-slate-400">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-slate-700 bg-slate-950 text-emerald-400"
+                        onChange={() => handleConsume(item.id, item.itemIds)}
+                        disabled={removingIds.has(item.id)}
+                      />
+                      设为已食用
+                    </label>
                   </div>
                 ))}
               </div>

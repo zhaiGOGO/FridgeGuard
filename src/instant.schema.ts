@@ -19,6 +19,7 @@ const _schema = i.schema({
       unit: i.string(),
       expiryAt: i.number().indexed(),
       createdAt: i.number().indexed(),
+      consumedAt: i.number().indexed().optional(),
       source: i.string(),
       confidence: i.number(),
     }),

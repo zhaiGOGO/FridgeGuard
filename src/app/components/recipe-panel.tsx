@@ -24,7 +24,14 @@ export default function RecipePanel() {
   const [recipeResult, setRecipeResult] = useState<RecipeResult | null>(null);
 
   const foodItems = data?.foodItems ?? [];
-  const displayItems = useMemo(() => groupDisplayItems(foodItems), [foodItems]);
+  const visibleItems = useMemo(
+    () => foodItems.filter((item) => item.consumedAt == null),
+    [foodItems]
+  );
+  const displayItems = useMemo(
+    () => groupDisplayItems(visibleItems),
+    [visibleItems]
+  );
 
   const buildRecipeInput = () => {
     const lines = displayItems.map(

@@ -6,6 +6,7 @@ export type FoodItem = InstaQLEntity<AppSchema, "foodItems">;
 
 export type DisplayItem = {
   id: string;
+  itemIds: string[];
   name: string;
   quantity: number;
   unit: string;
@@ -72,12 +73,14 @@ export const groupDisplayItems = (items: FoodItem[]): DisplayItem[] => {
     )}`;
     const existing = grouped.get(key);
     if (existing) {
+      existing.itemIds.push(item.id);
       existing.quantity += item.quantity;
       existing.confidence = Math.max(existing.confidence, item.confidence);
       return;
     }
     grouped.set(key, {
       id: key,
+      itemIds: [item.id],
       name: item.name,
       quantity: item.quantity,
       unit: item.unit,

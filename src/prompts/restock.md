@@ -23,3 +23,4 @@ Rules:
 - If quantity or unit is unknown, guess conservatively and lower confidence.
 - If expiry cannot be inferred, ask clarification.
 - Use common-sense shelf life defaults by category.
+- Always output item names in Chinese (simplified). If input names are in English, translate them.

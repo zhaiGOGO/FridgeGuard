@@ -13,10 +13,25 @@ const _schema = i.schema({
       imageURL: i.string().optional(),
       type: i.string().optional(),
     }),
-    todos: i.entity({
-      text: i.string(),
-      done: i.boolean(),
-      createdAt: i.number(),
+    foodItems: i.entity({
+      name: i.string().indexed(),
+      quantity: i.number(),
+      unit: i.string(),
+      expiryAt: i.number().indexed(),
+      createdAt: i.number().indexed(),
+      source: i.string(),
+      confidence: i.number(),
+    }),
+    userProfiles: i.entity({
+      data: i.string(),
+      updatedAt: i.number().indexed(),
+    }),
+    memoryHistory: i.entity({
+      updates: i.string(),
+      before: i.string(),
+      after: i.string(),
+      createdAt: i.number().indexed(),
+      source: i.string(),
     }),
   },
   links: {
@@ -33,10 +48,44 @@ const _schema = i.schema({
         label: "linkedGuestUsers",
       },
     },
-  },
-  rooms: {
-    todos: {
-      presence: i.entity({}),
+    userFoodItems: {
+      forward: {
+        on: "foodItems",
+        has: "one",
+        label: "owner",
+        onDelete: "cascade",
+      },
+      reverse: {
+        on: "$users",
+        has: "many",
+        label: "foodItems",
+      },
+    },
+    userProfile: {
+      forward: {
+        on: "userProfiles",
+        has: "one",
+        label: "user",
+        onDelete: "cascade",
+      },
+      reverse: {
+        on: "$users",
+        has: "one",
+        label: "profile",
+      },
+    },
+    userMemoryHistory: {
+      forward: {
+        on: "memoryHistory",
+        has: "one",
+        label: "user",
+        onDelete: "cascade",
+      },
+      reverse: {
+        on: "$users",
+        has: "many",
+        label: "memoryHistory",
+      },
     },
   },
 });
